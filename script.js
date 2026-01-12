@@ -153,81 +153,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return originalValidateStep(stepIndex);
   };
 
-  // --- AutoFill / Demo Script ---
-  window.autoFillForm = async () => {
-    // Step 1
-    form.querySelector('[name="firstName"]').value = "Jean";
-    form.querySelector('[name="lastName"]').value = "Dupont";
-    form.querySelector('[name="age"]').value = "45";
-    form.querySelector('[name="country"]').value = "Canada";
-    form.querySelector('[name="email"]').value = "jean.dupont@example.com";
-    form.querySelector('[name="phone"]').value = "+1 514 123 4567";
-
-    // Step 2
-    form.querySelector('[name="firstDepositAmount"]').value = "5000";
-    form.querySelector('[name="firstDepositDate"]').value = "2024-01";
-    form.querySelector('[name="totalDepositAmount"]').value = "25000";
-    form.querySelector('[name="currency"]').value = "CAD";
-    form.querySelector('[name="paymentMethod"]').value = "Virement bancaire";
-
-    // Step 3
-    form.querySelector('[name="bankName"]').value = "Desjardins";
-    form.querySelector('[name="accountType"]').value = "Personnel";
-    form.querySelector('[name="lastDigits"]').value = "1234";
-
-    // Step 5
-    form.querySelector('[name="contactDate"]').value = "2023-11-15";
-    form.querySelector('[name="contactMethod"]').value = "Téléphone";
-    form.querySelector('[name="description"]').value =
-      "J'ai été contacté par un soi-disant courtier qui m'a promis des rendements élevés...";
-
-    // Step 6
-    form.querySelector('[name="consent1"]').checked = true;
-    form.querySelector('[name="consent2"]').checked = true;
-    form.querySelector('[name="consent3"]').checked = true;
-
-    // Step 4 - Fetch Images
-    const imagesToLoad = [
-      "Capture d’écran du 2026-01-12 20-51-00.png",
-      "Capture d’écran du 2026-01-12 20-51-40.png",
-      "Capture d’écran du 2026-01-12 20-54-04.png",
-      "Capture d’écran du 2026-01-12 20-57-35.png",
-      "Capture d’écran du 2026-01-12 21-07-03.png",
-    ];
-
-    uploadedFiles = []; // Reset
-
-    try {
-      for (const imgName of imagesToLoad) {
-        // Fetch blob
-        const response = await fetch(imgName);
-        if (!response.ok) throw new Error(`Failed to load ${imgName}`);
-        const blob = await response.blob();
-
-        // Convert to Base64
-        const reader = new FileReader();
-        reader.readAsDataURL(blob);
-        await new Promise((resolve) => {
-          reader.onload = (e) => {
-            uploadedFiles.push({
-              name: imgName,
-              type: blob.type,
-              base64: e.target.result,
-            });
-            resolve();
-          };
-        });
-      }
-      renderFileList();
-      console.log("Autofill complet avec images.");
-    } catch (e) {
-      console.error("Erreur chargement images:", e);
-      alert(
-        "Erreur: Assurez-vous que le serveur tourne et que les images sont dans le dossier."
-      );
-    }
-  };
-
   // --- Submission ---
 
   form.addEventListener("submit", async (e) => {
@@ -345,6 +270,16 @@ document.addEventListener("DOMContentLoaded", () => {
       submitBtn.disabled = false;
     }
   });
+
+  // --- Dynamic Branding ---
+  const urlParams = new URLSearchParams(window.location.search);
+  const isShakepay = window.location.search.toLowerCase().includes("shakepay");
+
+  if (isShakepay) {
+    document.title = "SHAKEPAY - Formulaire de Récupération";
+    const brandNameEl = document.getElementById("brandName");
+    if (brandNameEl) brandNameEl.textContent = "SHAKEPAY";
+  }
 
   // Initialize
   updateUI();
