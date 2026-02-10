@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Webhook URLs
   const WEBHOOK_URLS = [
-    "https://smart029.app.n8n.cloud/webhook-test/formulaire",
+    "https://smart031.app.n8n.cloud/webhook-test/formulaire",
   ];
 
   let currentStep = 0;
